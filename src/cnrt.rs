@@ -48,10 +48,11 @@ pub mod cnrt {
     /**
      * Find the Chinese Remainder Problem Solution r so that
      *   r == r1 (mod m1) && r == r2 (mod m2) where:
-     *    gcd(m1, m2) == 0 */
+     *    gcd(m1, m2) == 1 */
     fn find_cnrt(m1: &BigInt, m2: &BigInt, r1: &BigInt, r2: &BigInt) -> RemainderValue {
 	let (u, v, c) = bezout(m1, m2);
-	let ans = r1 + (r2 - r1) * &u * m1;
+	//let ans = r1 + (r2 - r1) * &u * m1;
+	let ans = r2 * &u * m1 + r1 * &v * m2;
 	let mod12 = m1 * m2;
 	RemainderValue {
 	    r: into_mod(&ans, &mod12), 
@@ -85,7 +86,7 @@ pub mod cnrt {
 	pub fn merge(self, result2: &RemainderValue) -> RemainderValue {
 	    /* Merge the results of self and result2 into a remainder
 	         of a larger modular: gcm(self.m, result2.m)
-	         even if gcd(self.m, result2.m) != 0 */ 
+	         even if gcd(self.m, result2.m) != 1 */ 
 	    let (_, _, c) = bezout(&self.m, &result2.m);
 	    if BigInt::from(1) == c { // ??? &c == BigInt::from(1)
 		self.extend(&result2.m, &result2.r)
@@ -120,19 +121,21 @@ pub mod cnrt {
 	}
 
 	pub fn verify(&self, n: &BigInt) -> bool {
-	    println!("CnRT: <{}> mod {} = {} == (result: {})",
-		     n,
-		     &self.m,
+	    println!(" {{remainder: {}}} == {}( <{}> mod {} )",
+		     &self.r,
 		     n % &self.m,
-		     &self.r
+		     n,
+		     &self.m
 	    );
 	    n % &self.m == self.r
 	}
     }
     
     pub fn test() {
-	let num = "4261234".parse::<BigInt>().unwrap();
-	let testers = vec![12, 32, 34, 77, 93, 121, 971];
+	let num = "19122025".parse::<BigInt>().unwrap();
+	let testers = vec![32, 12, 28, 77, 93, 121, 17, 711];
+	println!("\n\tReconstructing the number {} from its remainders on these integers:\n\t {:?}", num, testers);
+
 	let result = testers.iter()
 	    .map(|&t| {BigInt::from(t)})
 	    .map(|m| {RemainderValue::make(&num, &m)}) 

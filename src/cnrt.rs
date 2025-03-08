@@ -1,17 +1,21 @@
 /**
- * The Chinese Remainder Theorem Instructional Program.
+ * Infor:  The Chinese Remainder Theorem Instructional Program.
+ * Author: Linghuei Guo
+ * Contact: PGP - 6819D81B0971C2C4
+ * Permission:   All Rights Reserved
  */
 pub mod cnrt {
 
     use num_bigint::BigInt;
 
-    #[inline]
     fn into_mod(x: &BigInt, m_r: &BigInt) -> BigInt {
 	(x % m_r + m_r) % m_r
     }
 
-    #[inline]
     fn bezout_marked(x: &BigInt, y: &BigInt, mark: i32) -> (BigInt, BigInt, BigInt) {
+	/** Find (u, v, c) s.t.
+	 *   u > 0, v <= 0, coprime(u, v),
+	 *   ux + vy = c */
 	if *y == BigInt::ZERO {
 	    (BigInt::from(1), BigInt::from(mark), x.clone())
 	}
@@ -24,23 +28,21 @@ pub mod cnrt {
 	}
     } // end fn
 
-    /** Find (u, v, c) s.t.
-     *   u > 0, v <= 0, coprime(u, v),
-     *   ux + vy = c */
     pub fn bezout_recursive(x: &BigInt, y: &BigInt) -> (BigInt, BigInt, BigInt) {
 	bezout_marked(x, y, 0)
     }
 
     pub fn bezout(x: &BigInt, y: &BigInt) -> (BigInt, BigInt, BigInt) {
-	fn looper(mut x: BigInt, y: BigInt, mut sxx: BigInt, mut syx: BigInt, sxy: BigInt, syy: BigInt) -> (BigInt, BigInt, BigInt) {
-	    if y == BigInt::ZERO {
-		(sxx, syx, x)
+	fn looper(mut x1: BigInt, x2: BigInt, mut s11: BigInt, mut s21: BigInt, mut s12: BigInt, mut s22: BigInt)
+		  -> (BigInt, BigInt, BigInt) {
+	    if x2 == BigInt::ZERO {
+		(s11, s21, x1)
 	    } else {
-		let k = &x / &y;
-		x = &x % &y;
-		sxx = &sxx - &k * &sxy;
-		syx = &syx - &k * &syy;
-		looper(y, x, sxy, syy, sxx, syx)
+		let k = &x1 / &x2;
+		x1 = &x1 % &x2;
+		s11 = &s11 - &k * &s12;
+		s21 = &s21 - &k * &s22;
+		looper (x2, x1, s12, s22, s11, s21)
 	    }
 	}
 	looper(x.clone(), y.clone(), BigInt::from(1), BigInt::from(0), BigInt::from(0), BigInt::from(1))
@@ -66,7 +68,6 @@ pub mod cnrt {
      * Find the Chinese Remainder Problem Solution r so that
      *   r == r1 (mod m1) && r == r2 (mod m2) where:
      *    gcd(m1, m2) == 1 */
-    #[inline]
     fn find_cnrt(m1: &BigInt, m2: &BigInt, r1: &BigInt, r2: &BigInt) -> RemainderValue {
 	let (u, v, c) = bezout(m1, m2);
 	//let ans = r1 + (r2 - r1) * &u * m1;
@@ -77,6 +78,7 @@ pub mod cnrt {
 	    m: mod12
 	}
     }
+
 
     impl RemainderValue {
 
@@ -111,7 +113,7 @@ pub mod cnrt {
 	    else {
 		let self_prevail_factors = &self.m / &c;
 
-		// Get rid of the prime factors of result2.m who have HIGHER orders as factors of self.m:
+		// Get rid of the prime factors in result2.m who have HIGHER orders as factors of self.m:
 		let obj2 = result2.clone()
 		    .exclude(&self_prevail_factors); 
 
@@ -122,10 +124,6 @@ pub mod cnrt {
 	    }
 	}
 
-	/**
-	 Exclude prime factors in self.m so that:
-	 gcd(self.m, target) == 1
-	 */
 	pub fn exclude(self, target: &BigInt) -> RemainderValue {
 	    let (_, _, c) = bezout(&self.m, target);
 	    if c != BigInt::from(1) {
@@ -171,3 +169,4 @@ pub mod cnrt {
 		});
     }
 }
+
